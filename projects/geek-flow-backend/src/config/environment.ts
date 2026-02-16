@@ -3,8 +3,8 @@ import { z } from 'zod';
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3200),
-  DATABASE_URL: z.string().url(),
-  DIRECT_URL: z.string().url().optional(),
+  DATABASE_URL: z.string().startsWith('postgres'),
+  DIRECT_URL: z.string().startsWith('postgres').optional(),
   ANTHROPIC_API_KEY: z.string().min(1),
   CORS_ORIGIN: z.string().default('https://geekatyourspot.com'),
   SENDGRID_API_KEY: z.string().optional(),
