@@ -1,0 +1,26 @@
+<div class="step-config" role="form" [attr.aria-label]="'Configure step: ' + step().adapter + '.' + step().action">
+  <h6 class="mb-1">{{ step().adapter }}.{{ step().action }}</h6>
+  <span class="badge bg-secondary mb-3">{{ step().type }}</span>
+
+  <div class="mb-3">
+    <label class="form-label small" for="step-config-json">Configuration (JSON)</label>
+    <textarea
+      id="step-config-json"
+      class="form-control font-monospace"
+      rows="8"
+      [ngModel]="configJson()"
+      (ngModelChange)="onConfigChange($event)"
+      aria-describedby="config-help"></textarea>
+    <small id="config-help" class="form-text">Edit the JSON configuration for this step.</small>
+  </div>
+
+  <gf-variable-picker
+    [steps]="allSteps()"
+    [currentStepId]="step().id"
+    (variableSelected)="insertVariable($event)" />
+
+  <div class="d-flex gap-2 mt-3">
+    <button class="btn btn-primary btn-sm" (click)="saveConfig()">Save</button>
+    <button class="btn btn-outline-danger btn-sm" (click)="deleteStep()">Delete Step</button>
+  </div>
+</div>

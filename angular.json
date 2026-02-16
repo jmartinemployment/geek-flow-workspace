@@ -6,5 +6,99 @@
   },
   "newProjectRoot": "projects",
   "projects": {
+    "geek-flow-library": {
+      "projectType": "library",
+      "root": "projects/geek-flow-library",
+      "sourceRoot": "projects/geek-flow-library/src",
+      "prefix": "gf",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/geek-flow-library/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/geek-flow-library/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/geek-flow-library/tsconfig.spec.json"
+          }
+        }
+      }
+    },
+    "geek-flow-elements": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        }
+      },
+      "root": "projects/geek-flow-elements",
+      "sourceRoot": "projects/geek-flow-elements/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "projects/geek-flow-elements/src/main.ts",
+            "tsConfig": "projects/geek-flow-elements/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/geek-flow-elements/public"
+              }
+            ],
+            "styles": [
+              "projects/geek-flow-elements/src/styles.scss"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "none"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "geek-flow-elements:build:production"
+            },
+            "development": {
+              "buildTarget": "geek-flow-elements:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test"
+        }
+      }
+    }
   }
 }

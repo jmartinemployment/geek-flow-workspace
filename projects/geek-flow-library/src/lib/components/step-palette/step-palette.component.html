@@ -1,0 +1,37 @@
+<div class="step-palette" role="toolbar" aria-label="Step palette">
+  <div class="mb-3">
+    <input
+      type="search"
+      class="form-control form-control-sm"
+      placeholder="Search steps..."
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)"
+      aria-label="Search steps" />
+  </div>
+
+  @if (triggers().length > 0) {
+    <h6 class="palette-category">Triggers</h6>
+    @for (template of triggers(); track template.adapter + template.action) {
+      <button
+        class="palette-item btn btn-outline-secondary w-100 text-start mb-1"
+        (click)="addStep(template)"
+        [attr.aria-label]="'Add ' + template.label">
+        <span class="palette-icon" aria-hidden="true">{{ template.icon }}</span>
+        {{ template.label }}
+      </button>
+    }
+  }
+
+  @if (actions().length > 0) {
+    <h6 class="palette-category mt-3">Actions</h6>
+    @for (template of actions(); track template.adapter + template.action) {
+      <button
+        class="palette-item btn btn-outline-secondary w-100 text-start mb-1"
+        (click)="addStep(template)"
+        [attr.aria-label]="'Add ' + template.label">
+        <span class="palette-icon" aria-hidden="true">{{ template.icon }}</span>
+        {{ template.label }}
+      </button>
+    }
+  }
+</div>

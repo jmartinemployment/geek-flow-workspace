@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+.variable-picker {
+  padding: 0.5rem;
+}
+
+.variable-item {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+
+  code {
+    font-size: 0.75rem;
+  }
+}

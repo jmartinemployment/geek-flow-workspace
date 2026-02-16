@@ -4,6 +4,11 @@
   "compileOnSave": false,
   "compilerOptions": {
     "strict": true,
+    "paths": {
+      "geek-flow-library": [
+        "./projects/geek-flow-library/src/public-api.ts"
+      ]
+    },
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
@@ -21,5 +26,19 @@
     "strictInputAccessModifiers": true,
     "strictTemplates": true
   },
-  "files": []
+  "files": [],
+  "references": [
+    {
+      "path": "./projects/geek-flow-library/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/geek-flow-library/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/geek-flow-elements/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/geek-flow-elements/tsconfig.spec.json"
+    }
+  ]
 }

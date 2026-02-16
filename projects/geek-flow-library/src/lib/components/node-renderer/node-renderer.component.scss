@@ -1,0 +1,24 @@
+:host {
+  display: block;
+}
+
+.node-rect {
+  cursor: pointer;
+  transition: fill 0.15s;
+
+  &:hover {
+    filter: brightness(0.97);
+  }
+}
+
+.node-type {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.node-label {
+  font-size: 13px;
+  font-weight: 500;
+}

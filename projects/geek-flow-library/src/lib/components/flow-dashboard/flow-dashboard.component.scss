@@ -1,0 +1,23 @@
+:host {
+  display: block;
+}
+
+.dashboard-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.flow-card {
+  cursor: pointer;
+  transition: border-color 0.15s ease-in-out;
+
+  &:hover {
+    border-color: var(--bs-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+  }
+}

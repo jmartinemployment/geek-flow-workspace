@@ -1,0 +1,74 @@
+<div class="builder-container">
+  <!-- Left sidebar: Step palette -->
+  <aside class="builder-sidebar builder-sidebar-left" aria-label="Step palette">
+    <gf-step-palette (stepAdded)="addStepFromTemplate($event)" />
+  </aside>
+
+  <!-- Center: SVG Canvas -->
+  <main class="builder-canvas">
+    @if (error()) {
+      <div class="alert alert-danger m-2" role="alert">
+        {{ error() }}
+        <button class="btn-close float-end" (click)="error.set(null)" aria-label="Dismiss"></button>
+      </div>
+    }
+
+    <div class="canvas-toolbar d-flex gap-2 p-2">
+      <button class="btn btn-sm btn-primary" (click)="save()" [disabled]="isSaving()">
+        {{ isSaving() ? 'Saving...' : 'Save' }}
+      </button>
+      <button class="btn btn-sm btn-outline-secondary" (click)="loadFlow()">Reload</button>
+    </div>
+
+    @if (isLoading()) {
+      <div class="text-center py-5" role="status">
+        <div class="spinner-border" aria-hidden="true"></div>
+        <span class="visually-hidden">Loading flow...</span>
+      </div>
+    } @else {
+      <svg
+        #canvasSvg
+        class="canvas-svg"
+        [attr.viewBox]="viewBox()"
+        (wheel)="onCanvasWheel($event)"
+        role="img"
+        aria-label="Flow builder canvas">
+
+        <!-- Connection lines -->
+        @for (pair of connectionPairs(); track $index) {
+          <svg:g
+            gfConnection
+            [fromX]="pair.from.x"
+            [fromY]="pair.from.y"
+            [toX]="pair.to.x"
+            [toY]="pair.to.y" />
+        }
+
+        <!-- Nodes -->
+        @for (step of steps(); track step.id) {
+          <svg:g
+            gfNode
+            [step]="step"
+            [position]="getNodePosition(step.id)"
+            [isSelected]="selectedStepId() === step.id"
+            (nodeSelected)="selectStep($event)" />
+        }
+      </svg>
+    }
+  </main>
+
+  <!-- Right sidebar: Step config -->
+  <aside class="builder-sidebar builder-sidebar-right" aria-label="Step configuration">
+    @if (selectedStep()) {
+      <gf-step-config
+        [step]="selectedStep()!"
+        [allSteps]="steps()"
+        (stepUpdated)="updateStepConfig($event)"
+        (stepDeleted)="deleteStep($event)" />
+    } @else {
+      <div class="p-3 text-muted text-center">
+        <p>Select a step to configure it.</p>
+      </div>
+    }
+  </aside>
+</div>

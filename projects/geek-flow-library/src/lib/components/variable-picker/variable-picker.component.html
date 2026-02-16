@@ -1,0 +1,15 @@
+<div class="variable-picker" role="listbox" aria-label="Insert variable">
+  <label class="form-label small fw-bold">Variables</label>
+  @for (v of variables(); track v.value) {
+    <button
+      class="variable-item btn btn-sm btn-outline-info w-100 text-start mb-1"
+      role="option"
+      (click)="select(v)"
+      [attr.aria-label]="'Insert ' + v.label">
+      <code>{{ v.value }}</code>
+      <small class="d-block text-muted">{{ v.label }}</small>
+    </button>
+  } @empty {
+    <p class="text-muted small">No variables available.</p>
+  }
+</div>

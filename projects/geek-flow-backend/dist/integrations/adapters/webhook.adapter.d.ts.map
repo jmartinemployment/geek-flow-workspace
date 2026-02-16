@@ -1,0 +1,1 @@
+{"version":3,"file":"webhook.adapter.d.ts","sourceRoot":"","sources":["../../../src/integrations/adapters/webhook.adapter.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,aAAa,EAAE,MAAM,oBAAoB,CAAC;AAMxD,wBAAsB,cAAc,CAClC,MAAM,EAAE,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC,EAC/B,OAAO,EAAE,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC,GAC/B,OAAO,CAAC,aAAa,CAAC,CAyCxB"}

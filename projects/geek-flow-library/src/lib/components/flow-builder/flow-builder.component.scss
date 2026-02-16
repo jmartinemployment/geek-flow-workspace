@@ -1,0 +1,52 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.builder-container {
+  display: grid;
+  grid-template-columns: 240px 1fr 280px;
+  height: 100%;
+  min-height: 600px;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.builder-sidebar {
+  background: var(--bs-body-bg);
+  border-right: 1px solid var(--bs-border-color);
+  overflow-y: auto;
+
+  &-right {
+    border-right: none;
+    border-left: 1px solid var(--bs-border-color);
+  }
+}
+
+.builder-canvas {
+  background: #f8f9fa;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas-toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: rgba(248, 249, 250, 0.9);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.canvas-svg {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
