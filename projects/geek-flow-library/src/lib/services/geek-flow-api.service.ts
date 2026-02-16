@@ -12,7 +12,7 @@ interface ApiResponse<T> {
 @Injectable({ providedIn: 'root' })
 export class GeekFlowApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'https://geek-flow-backend.onrender.com/api';
+  private readonly baseUrl = 'https://geek-flow-workspace.onrender.com/api';
 
   // --- Flows ---
 
