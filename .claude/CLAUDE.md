@@ -57,7 +57,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ---
 
-# FlowGeek — Visual Workflow Builder for SMB Owners
+# Geek-Flow — Visual Workflow Builder for SMB Owners
 
 ## Project Overview
 
@@ -196,3 +196,15 @@ npx prisma migrate dev  # Run migrations
 - Decision: Separate `.html` and `.scss` files for all components (no inline templates)
 - Verification: `ng build geek-flow-library` ✓, `ng build geek-flow-elements` ✓ (215 kB main.js, unhashed), backend `npm run build` ✓, `npm run lint` ✓
 - Next: Create git commits, deploy backend to Render, set up Supabase DB, WordPress integration
+
+**February 16, 2026 (Session 2):**
+- Supabase database setup complete
+- Supabase project: `geek-flow` (project ref: `djgkvqwlvbxclkwntumy`, region: us-east-1)
+- Supabase URL: `https://djgkvqwlvbxclkwntumy.supabase.co`
+- Created: `.env` with DATABASE_URL (pooler, port 6543) and DIRECT_URL (direct, port 5432)
+- Ran: `npx prisma migrate dev --name init` — migration `20260216204354_init` applied successfully
+- Created: 6 tables (users, flows, steps, runs, run_logs, user_integrations) + 4 enums (Plan, FlowStatus, StepType, RunStatus)
+- Generated: Prisma Client to `src/generated/prisma/`
+- Fixed: `.gitignore` — added `.env*`, `src/generated/` to prevent committing secrets and generated files
+- Verification: `npx prisma migrate status` confirms "Database schema is up to date!"
+- Next: Deploy backend to Render (needs DATABASE_URL env var), WordPress integration (page template + FTP upload)

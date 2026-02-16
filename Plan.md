@@ -1,5 +1,32 @@
 # FlowGeek — Visual Workflow Builder for SMB Owners
 
+---
+
+## PRIORITY: Set Up Supabase Database
+
+**Status:** COMPLETE (February 16, 2026 — Session 2)
+
+### Steps
+
+1. Create a new Supabase project named `geek-flow` (region: `us-east-1`)
+2. Get the connection strings (pooler + direct)
+3. Add `DATABASE_URL` and `DIRECT_URL` to `projects/geek-flow-backend/.env`
+4. Run `npx prisma migrate dev --name init` to create all tables (User, Flow, Step, Run, RunLog, UserIntegration)
+5. Verify tables exist via Supabase MCP
+6. Update `CLAUDE.md` session notes with Supabase project details
+
+### Prisma Schema (already written)
+
+Located at `projects/geek-flow-backend/prisma/schema.prisma` — 6 models, 4 enums, ready to migrate.
+
+### After Database Setup
+
+- Deploy backend to Render (needs DATABASE_URL env var)
+- WordPress integration (page template + FTP upload)
+- Add `.gitignore` (exclude `dist/`, `node_modules/`, generated Prisma files)
+
+---
+
 ## Product Vision
 
 A drag-and-drop workflow automation platform built for non-technical small business owners. FlowGeek lets users visually connect triggers and actions — "If X happens, do Y, then Z" — without writing code. AI analyzes their current manual processes and suggests ready-made automations.
