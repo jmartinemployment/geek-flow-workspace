@@ -208,3 +208,26 @@ npx prisma migrate dev  # Run migrations
 - Fixed: `.gitignore` — added `.env*`, `src/generated/` to prevent committing secrets and generated files
 - Verification: `npx prisma migrate status` confirms "Database schema is up to date!"
 - Next: Deploy backend to Render (needs DATABASE_URL env var), WordPress integration (page template + FTP upload)
+
+**February 17, 2026 (Session 3):**
+- Backend deployed to Render: `https://geek-flow-workspace.onrender.com`
+- Build command: `npm install && npx prisma generate && npm run build`
+- Start command: `npm run start`
+- Health check path: `/health` — verified working
+- Fixed: Build failed with P1001 (can't reach DB) — removed `prisma migrate deploy` from build command; only `prisma generate` needed (migrations already applied locally)
+- Render env vars: DATABASE_URL (shared pooler, port 6543, pgbouncer=true), DIRECT_URL, ANTHROPIC_API_KEY, CORS_ORIGIN, NODE_ENV=production
+- Fixed: Render UI injecting newlines into env var values — added whitespace sanitization in `environment.ts`
+- Fixed: Supabase shared pooler required for Render free tier (IPv4 only) — `aws-0-us-west-2.pooler.supabase.com`
+- Supabase project on Render: `nvcfdbhmsdansrsxhwwv` (different from local dev project `djgkvqwlvbxclkwntumy`)
+- Ran migration on `nvcfdbhmsdansrsxhwwv` — tables created successfully
+- Created: `/api/seed` endpoint for default user creation (idempotent upsert)
+- Seeded: `default-user` (jeff@geekatyourspot.com) in production database
+- WordPress integration complete:
+  - `page-geek-flow.php` — custom template with `<geek-flow-dashboard>` element
+  - `functions.php` — added GeekFlow CSS + JS module enqueue (page slug: `geek-flow`)
+  - FTP uploaded: `main.js`, `styles.css`, `page-geek-flow.php`, `functions.php`
+- Verified: Dashboard renders on `geekatyourspot.com/geek-flow/`, flows created via UI saved to Supabase
+- Removed: temporary debug endpoint (`/debug/db-url`)
+- Fixed: `createFlow()` not refreshing flow list after creation
+- Updated: `page-geek-flow.php` — wired Edit button to show `<geek-flow-builder>` via JS view toggle
+- **SHELVED:** Product UX not viable for target audience (non-technical SMB owners). Builder uses developer terminology (webhook, cron, HTTP request) that communicates nothing to end users. Infrastructure is solid (backend, DB, deployment pipeline all working). To resume: define 2-3 concrete real-world workflows SMB clients need, then redesign UX around pre-built templates with simple on/off setup instead of abstract canvas builder.

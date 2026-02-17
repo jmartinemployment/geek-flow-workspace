@@ -1,805 +1,605 @@
-# FlowGeek — Visual Workflow Builder for SMB Owners
+# GeekFlow — Gap Analysis & Implementation Roadmap
+
+> **Compared against:** Zapier (industry leader, 8,000+ integrations) and 17+ competitors
+> **Target audience:** Non-technical SMB owners (Geek At Your Spot clients)
+> **Core problem:** Current GeekFlow UI uses developer jargon and abstractions
+> that communicate nothing to the target user.
 
 ---
 
-## PRIORITY: Set Up Supabase Database
+## Competitive Landscape
 
-**Status:** COMPLETE (February 16, 2026 — Session 2)
+### Tier 1 — Major SMB/Mid-Market
 
-### Steps
+| Platform | Website | Free Tier | Starting Paid | Integrations | Differentiator |
+|----------|---------|-----------|---------------|-------------|----------------|
+| **Zapier** | zapier.com | 100 tasks/mo | $19.99/mo | 8,000+ | Largest app library, easiest onboarding |
+| **Make** (fka Integromat) | make.com | 1,000 ops/mo | ~$10.59/mo | 3,000+ | Visual flowchart builder with branching/iteration, much cheaper per operation |
+| **Pabbly Connect** | pabbly.com/connect | 100 tasks/mo | $16/mo or $249 lifetime | 1,000+ | Lifetime deal pricing, internal steps are free (only trigger counts) |
+| **Integrately** | integrately.com | Limited | ~$29.99/mo | 1,100+ | One-click pre-built automations, fastest time-to-automation |
+| **IFTTT** | ifttt.com | Yes (limited) | $2.99/mo | 700+ | Consumer IoT/smart home (Alexa, Hue, Google Home) |
+| **Pipedream** | pipedream.com | 10K inv/day | $29/mo | 900+ | Code-first — real Node.js/Python/Go in workflow steps |
 
-1. Create a new Supabase project named `geek-flow` (region: `us-east-1`)
-2. Get the connection strings (pooler + direct)
-3. Add `DATABASE_URL` and `DIRECT_URL` to `projects/geek-flow-backend/.env`
-4. Run `npx prisma migrate dev --name init` to create all tables (User, Flow, Step, Run, RunLog, UserIntegration)
-5. Verify tables exist via Supabase MCP
-6. Update `CLAUDE.md` session notes with Supabase project details
+### Tier 2 — Open Source / Self-Hosted
 
-### Prisma Schema (already written)
+| Platform | Website | Free Tier | Starting Paid | Integrations | Differentiator |
+|----------|---------|-----------|---------------|-------------|----------------|
+| **n8n** | n8n.io | Unlimited (self-host) | €24/mo cloud | 400+ native | Open-source, no per-task pricing self-hosted, code nodes |
+| **Activepieces** | activepieces.com | 1,000 tasks/mo | $1/1K tasks | 450+ | Fastest-growing OSS, MCP server support (400+ servers) |
+| **Automatisch** | automatisch.io | Unlimited (self-host) | €20/user/mo | 50+ | GDPR-first, European data residency |
 
-Located at `projects/geek-flow-backend/prisma/schema.prisma` — 6 models, 4 enums, ready to migrate.
+### Tier 3 — Enterprise / iPaaS
 
-### After Database Setup
+| Platform | Website | Free Tier | Starting Paid | Integrations | Differentiator |
+|----------|---------|-----------|---------------|-------------|----------------|
+| **Power Automate** | powerautomate.microsoft.com | With M365 | $15/user/mo | 1,000+ | Microsoft ecosystem + RPA for desktop apps |
+| **Workato** | workato.com | None | ~$60K+/yr | 1,200+ | Enterprise governance, SOC 2 Type II, audit logs |
+| **Tray.ai** | tray.ai | None | Custom | 600+ | Embeddable — SaaS companies offer integrations to their customers |
+| **Celigo** | celigo.com | None | Custom | 200+ apps | ERP/eCommerce specialist (NetSuite, Shopify, Amazon) |
+| **Boomi** | boomi.com | None | ~$550/mo | 200K+ | Full iPaaS + MDM + EDI, spun from Dell |
 
-- Deploy backend to Render (needs DATABASE_URL env var)
-- WordPress integration (page template + FTP upload)
-- Add `.gitignore` (exclude `dist/`, `node_modules/`, generated Prisma files)
+### Tier 4 — AI-Native (New Wave)
 
----
+| Platform | Website | Free Tier | Starting Paid | Differentiator |
+|----------|---------|-----------|---------------|----------------|
+| **Gumloop** | gumloop.com | 2,000 credits/mo | $37/mo | AI-first canvas — nodes are LLM calls, scrapers, transformers |
+| **Relay.app** | relay.app | 200 steps/mo | Contact | Human-in-the-loop — workflows pause for human approval |
+| **Lindy AI** | lindy.ai | Trial | $49.99/mo | AI agents that operate autonomously (email, scheduling, research) |
 
-## Product Vision
+### Strategic Positioning for GeekFlow
 
-A drag-and-drop workflow automation platform built for non-technical small business owners. FlowGeek lets users visually connect triggers and actions — "If X happens, do Y, then Z" — without writing code. AI analyzes their current manual processes and suggests ready-made automations.
-
-**Tagline:** "Stop doing it manually. Let FlowGeek handle it."
-
-**Target Users:** Small business owners in Broward and Palm Beach County (Geek At Your Spot clients), expanding to general SMB market.
-
----
-
-## Core User Story
-
-> "When a customer fills out my contact form, I want to automatically create a CRM record, send them a welcome email, notify my team on Slack, and schedule a follow-up call in 3 days — all without me touching anything."
-
----
-
-## Product Architecture
-
-### System Overview
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    WordPress Frontend                    │
-│              (Angular Elements on geekatyourspot.com)    │
-│                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐  │
-│  │ Flow Builder  │  │  Dashboard   │  │  AI Suggest   │  │
-│  │  (drag/drop)  │  │ (run history)│  │  (describe &  │  │
-│  │              │  │              │  │   generate)   │  │
-│  └──────────────┘  └──────────────┘  └───────────────┘  │
-└─────────────────────┬───────────────────────────────────┘
-                      │ HTTPS
-┌─────────────────────▼───────────────────────────────────┐
-│               FlowGeek Backend (Express + TS)            │
-│                      Port 3200                           │
-│                                                          │
-│  ┌────────────┐ ┌────────────┐ ┌──────────────────────┐ │
-│  │  Flow API   │ │ Execution  │ │  Integration Engine  │ │
-│  │ (CRUD flows)│ │  Engine    │ │  (adapters for each  │ │
-│  │            │ │ (run steps)│ │   3rd-party service) │ │
-│  └────────────┘ └────────────┘ └──────────────────────┘ │
-│  ┌────────────┐ ┌────────────┐ ┌──────────────────────┐ │
-│  │  Webhook   │ │  Scheduler │ │  AI Flow Generator   │ │
-│  │  Receiver  │ │  (cron)    │ │  (Claude API)        │ │
-│  └────────────┘ └────────────┘ └──────────────────────┘ │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────┐
-│              Supabase PostgreSQL                         │
-│  flows, steps, runs, run_logs, integrations, users      │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Tech Stack
-
-| Layer | Technology | Notes |
-|-------|-----------|-------|
-| Frontend | Angular 21 + Angular Elements | Standalone components, signals, OnPush |
-| Visual Builder | Custom Angular canvas (SVG-based) | Drag-and-drop nodes + connections |
-| CSS | Bootstrap 5.3.8 SCSS | Consistent with other Geek projects |
-| Backend | Express.js + TypeScript | Port 3200, registered with ControllerBackend |
-| Database | PostgreSQL via Supabase + Prisma | Same Supabase project as other services |
-| AI | Claude API (Sonnet 4+) | Flow suggestion, natural language → flow |
-| Job Queue | BullMQ + Redis (Render Redis) | Async flow execution, retries, scheduling |
-| Hosting (FE) | WordPress (geekatyourspot.com) | Angular Elements via FTP |
-| Hosting (BE) | Render.com | Auto-deploy from GitHub main |
+1. **SMB price ceiling is ~$25-30/mo.** Pabbly and Make have trained the market to expect sub-$30 starting prices. Zapier's $20 floor is the benchmark.
+2. **Per-task pricing is becoming a liability.** Pabbly's "internal steps free" and Activepieces' flat task pricing are direct attacks on Zapier's model.
+3. **Open source is winning developer mindshare.** n8n and Activepieces growing fast with self-host options and no vendor lock-in.
+4. **AI-native tools are fragmented.** Gumloop, Relay, and Lindy each solve narrow AI-adjacent use cases but none combine a visual no-code builder with AI-native flow generation at SMB prices.
+5. **GeekFlow's gap opportunity:** AI-assisted, SMB-first, WordPress-native delivery at consumer pricing. No current competitor owns that specific combination — an automation tool that lives inside the client's existing WordPress site, speaks their language, and uses AI to generate workflows from plain-English descriptions.
 
 ---
 
-## Workspace Structure
+## What Zapier Gets Right (That GeekFlow Must Copy)
 
-```
-FlowGeek-Workspace/
-  projects/
-    flowgeek-library/                # Angular library
-      src/
-        public-api.ts
-        lib/
-          models/
-            flow.model.ts            # Flow, Step, Connection interfaces
-            integration.model.ts     # Integration adapter types
-            execution.model.ts       # Run, RunLog interfaces
-          services/
-            flowgeek-api.service.ts   # HTTP client for backend
-          components/
-            flow-builder/             # Visual drag-and-drop canvas
-            flow-dashboard/           # List of user's flows + run history
-            step-palette/             # Sidebar of available triggers/actions
-            step-config/              # Config panel for selected step
-            run-history/              # Execution log viewer
-            ai-suggest/               # "Describe your process" AI panel
-            integration-picker/       # Connect 3rd-party accounts
-            node-renderer/            # Individual node on canvas (internal)
-            connection-line/          # SVG line between nodes (internal)
+### 1. App-First, Not Protocol-First
 
-    flowgeek-elements/               # Angular Elements app
-      src/main.ts                    # Registers <flowgeek-builder>, <flowgeek-dashboard>
+Zapier users pick **"Gmail"**, not "email adapter." They pick **"New Form Submission"**,
+not "Webhook Received." The entire UX is organized around app icons and plain-English
+event names. Users never see URLs, HTTP methods, or JSON.
 
-    flowgeek-backend/                # Express + TypeScript backend
-      prisma/schema.prisma
-      src/
-        server.ts                    # Express entry (port 3200)
-        config/
-          environment.ts
-          logger.ts
-          database.ts
-        routes/
-          flow.routes.ts             # CRUD for flows
-          execution.routes.ts        # Trigger runs, view history
-          integration.routes.ts      # OAuth connect/disconnect
-          webhook.routes.ts          # Inbound webhook receiver
-          ai.routes.ts               # AI flow suggestion
-        engine/
-          executor.ts                # Step-by-step flow runner
-          scheduler.ts               # Cron-based trigger scheduling
-          context.ts                 # Runtime context (data passing between steps)
-        integrations/
-          base-adapter.ts            # Abstract adapter interface
-          adapters/
-            email.adapter.ts         # SMTP / SendGrid / Mailgun
-            slack.adapter.ts         # Slack Web API
-            google-sheets.adapter.ts # Google Sheets API
-            google-calendar.adapter.ts
-            stripe.adapter.ts        # Stripe webhooks + API
-            webhook.adapter.ts       # Generic inbound/outbound webhooks
-            crm.adapter.ts           # Internal CRM (Geek projects)
-            sms.adapter.ts           # Twilio SMS
-            form.adapter.ts          # Form submission trigger
-        ai/
-          flow-generator.ts          # Claude API: natural language → flow JSON
-          process-analyzer.ts        # Claude API: analyze manual process description
-          suggestion-engine.ts       # Recommend automations based on usage
-        middleware/
-          error-handler.ts
-          auth.middleware.ts
-        utils/
-          errors.ts
-          response.ts
-```
+**GeekFlow today:** "Webhook Received", "Schedule (Cron)", "HTTP Request" — meaningless
+to a small business owner.
+
+### 2. Vertical Step-by-Step Wizard (Not Free-Form Canvas)
+
+Zapier deliberately chose a **linear vertical editor** over a canvas. One step expanded
+at a time. Progressive disclosure. No node positioning, no connection drawing. The system
+handles layout automatically.
+
+**GeekFlow today:** SVG canvas with manually-placed nodes and bezier curves — higher
+cognitive load, zero benefit for simple 3-8 step flows that SMB owners will create.
+
+### 3. Structured Config Forms (Not JSON Editing)
+
+Every Zapier action has **specific form fields** — text inputs, dropdowns, toggles.
+Dynamic data from previous steps appears as **colored pills** (e.g., green pill
+"1. Trigger > Email Address"). Users never see or edit JSON.
+
+**GeekFlow today:** Raw JSON textarea with `{{template}}` syntax for step configuration.
+
+### 4. Template-Driven Onboarding
+
+Zapier's home page shows **recommended templates** based on connected apps and
+**category filters** ("Lead management", "Customer support", "Marketing & growth").
+New users start from a working automation, not a blank canvas.
+
+**GeekFlow today:** Empty flow list with "+ New Flow" button (blank page problem).
+
+### 5. AI Copilot (Describe → Generate)
+
+Zapier's home page prominently features an **AI prompt bar**: "Enter an idea or app name
+to get started." Users describe what they want in plain English (text or voice), and
+Copilot generates a complete Zap draft.
+
+**GeekFlow today:** Anthropic API key configured but unused. No AI-assisted flow creation.
+
+### 6. Per-Step Testing with Real Data
+
+Each Zapier step has a **"Test" button** that executes just that step with real data.
+Users see actual output before continuing to the next step. This builds confidence
+for non-technical users.
+
+**GeekFlow today:** No test button in the builder. Test run only via API endpoint.
 
 ---
 
-## Database Schema (Prisma)
+## Current GeekFlow Inventory
 
-```prisma
-model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String?
-  plan          Plan     @default(FREE)
-  flowLimit     Int      @default(5)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  flows         Flow[]
-  integrations  UserIntegration[]
-}
+### What Works
 
-enum Plan {
-  FREE
-  STARTER
-  PRO
-}
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Flow CRUD | Working | Create, list, edit, delete, duplicate |
+| Step CRUD | Working | Create, edit, delete, reorder |
+| Webhook adapter | Working | Outbound HTTP requests via fetch() |
+| Email adapter | Working | SendGrid v3 API (needs API key) |
+| Slack adapter | Working | chat.postMessage (needs bot token) |
+| Execution engine | Working | Sequential steps, 3 retries, exponential backoff |
+| Template variables | Working | `{{trigger.body.field}}` deep path resolution |
+| Per-step run logging | Working | Input, output, duration, status per step |
+| Inbound webhook trigger | Working | POST /api/webhooks/:flowId |
+| Cron scheduler | Working | Loads active flows on startup |
+| Run history | Working | Paginated list with status badges |
+| SVG canvas | Working | Nodes, bezier connections, zoom |
+| WordPress integration | Working | Angular Elements on geekatyourspot.com/geek-flow/ |
+| Render deployment | Working | Auto-deploy from GitHub |
+| Supabase database | Working | 6 tables, 4 enums |
 
-model Flow {
-  id            String     @id @default(cuid())
-  userId        String
-  user          User       @relation(fields: [userId], references: [id])
-  name          String
-  description   String?
-  status        FlowStatus @default(DRAFT)
-  trigger       Json       // Trigger config (type, params)
-  steps         Step[]
-  connections   Json       // Array of { fromStepId, toStepId, condition? }
-  canvasLayout  Json?      // Node positions for visual builder
-  schedule      String?    // Cron expression if scheduled trigger
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  runs          Run[]
-}
+### What's Stubbed (Schema Only, No Implementation)
 
-enum FlowStatus {
-  DRAFT
-  ACTIVE
-  PAUSED
-  ERROR
-}
+| Feature | Schema | Adapter | Executor | UI |
+|---------|--------|---------|----------|-----|
+| CONDITION steps | Enum exists | None | No logic | No palette template |
+| DELAY steps | Enum exists | None | No logic | No palette template |
+| TRANSFORM steps | Enum exists | None | No logic | No palette template |
+| UserIntegration | Table exists | N/A | N/A | Never read or written |
+| Plan/flowLimit | Fields exist | N/A | Never enforced | No UI |
+| Connection conditions | JSON field exists | N/A | Executor ignores | No UI |
+| Node drag-to-move | Output declared | N/A | N/A | Never wired |
 
-model Step {
-  id            String   @id @default(cuid())
-  flowId        String
-  flow          Flow     @relation(fields: [flowId], references: [id], onDelete: Cascade)
-  order         Int
-  type          StepType
-  adapter       String   // e.g., "email", "slack", "google-sheets"
-  action        String   // e.g., "send_email", "post_message", "add_row"
-  config        Json     // Adapter-specific configuration
-  inputMapping  Json?    // Maps data from previous steps: { "to": "{{trigger.email}}" }
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
+### Known Bugs
 
-enum StepType {
-  TRIGGER
-  ACTION
-  CONDITION
-  DELAY
-  TRANSFORM
-}
-
-model Run {
-  id            String    @id @default(cuid())
-  flowId        String
-  flow          Flow      @relation(fields: [flowId], references: [id])
-  status        RunStatus @default(PENDING)
-  triggerData   Json?     // Data that started the run
-  startedAt     DateTime  @default(now())
-  completedAt   DateTime?
-  error         String?
-  logs          RunLog[]
-}
-
-enum RunStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  FAILED
-  CANCELLED
-}
-
-model RunLog {
-  id            String   @id @default(cuid())
-  runId         String
-  run           Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
-  stepId        String
-  status        String   // "started", "completed", "failed", "skipped"
-  input         Json?
-  output        Json?
-  error         String?
-  duration      Int?     // milliseconds
-  createdAt     DateTime @default(now())
-}
-
-model UserIntegration {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  adapter       String   // "slack", "google", "stripe", etc.
-  credentials   Json     // Encrypted OAuth tokens or API keys
-  metadata      Json?    // Account name, workspace, etc.
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@unique([userId, adapter])
-}
-```
+| Bug | Impact |
+|-----|--------|
+| Activate/pause don't integrate with scheduler | Cron flows only load on server restart |
+| Run cancellation doesn't stop execution | Executor has no mid-run cancellation check |
+| Flow delete doesn't cascade to runs | Orphan run records remain in database |
+| createFlow() uses hardcoded 'default-user' | No authentication |
 
 ---
 
-## API Endpoints
+## Gap Analysis: Feature-by-Feature
 
-### Flows
+### UX & Navigation (P0 — Blocks Everything)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `POST` | `/api/flows` | Create a new flow |
-| `GET` | `/api/flows` | List user's flows (with status, last run) |
-| `GET` | `/api/flows/:id` | Get flow with steps and canvas layout |
-| `PUT` | `/api/flows/:id` | Update flow (steps, connections, config) |
-| `DELETE` | `/api/flows/:id` | Delete flow and all runs |
-| `POST` | `/api/flows/:id/activate` | Set flow to ACTIVE (validates steps) |
-| `POST` | `/api/flows/:id/pause` | Pause an active flow |
-| `POST` | `/api/flows/:id/duplicate` | Clone a flow |
+| # | Zapier Feature | GeekFlow Status | Gap | Priority |
+|---|---------------|-----------------|-----|----------|
+| 1 | App directory with icons and plain-English names | Protocol-first jargon | **MISSING** — Need AppDefinition model + branded tiles | P0 |
+| 2 | Vertical step wizard editor | SVG canvas only | **MISSING** — Need linear step-list editor | P0 |
+| 3 | Structured per-adapter config forms | Raw JSON textarea | **MISSING** — Need dynamic form rendering from ConfigField[] | P0 |
+| 4 | Visual data pills from previous steps | `{{template}}` syntax in JSON | **MISSING** — Need dropdown variable picker with friendly names | P0 |
+| 5 | Template gallery on home page | Empty flow list | **MISSING** — Need 5-10 pre-built SMB templates | P0 |
+| 6 | Category filters (Lead mgmt, Support, Marketing) | None | **MISSING** — Need business-outcome categories | P0 |
+| 7 | Per-step test with real data preview | No test in builder | **MISSING** — Need inline test button per step | P1 |
+| 8 | AI Copilot ("describe what you want") | API key exists, no UI | **MISSING** — Need prompt bar + flow generation | P1 |
 
-### Execution
+### Flow Builder Features (P1)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/flows/:id/test` | Run flow once with sample data |
-| `GET` | `/api/flows/:id/runs` | Paginated run history |
-| `GET` | `/api/runs/:id` | Run detail with step-by-step logs |
-| `POST` | `/api/runs/:id/cancel` | Cancel a running flow |
+| # | Zapier Feature | GeekFlow Status | Gap | Priority |
+|---|---------------|-----------------|-----|----------|
+| 9 | Filters (conditional gates) | CONDITION enum only | **MISSING** — Need rule builder UI + executor logic | P1 |
+| 10 | Paths (branching if/else, up to 10 branches) | Connection.condition field ignored | **MISSING** — Need branching executor + UI | P2 |
+| 11 | Delay steps (wait for, wait until) | DELAY enum only | **MISSING** — Need delay adapter + executor logic | P1 |
+| 12 | Formatter (text/number/date transforms) | TRANSFORM enum only | **MISSING** — Need transform adapter + UI | P2 |
+| 13 | Drag-and-drop step reordering | Steps ordered by `order` field | Partial — API supports reorder, no drag UI | P2 |
+| 14 | Undo/redo | None | **MISSING** | P3 |
+| 15 | Flow name editing in builder | Not available | **MISSING** | P2 |
+| 16 | Sub-Zaps (reusable step sequences) | None | **MISSING** | P3 |
 
-### Webhooks (Triggers)
+### App Connections & Auth (P1)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/webhooks/:flowId` | Inbound webhook trigger (public) |
-| `GET` | `/api/webhooks/:flowId` | Webhook URL + config info |
+| # | Zapier Feature | GeekFlow Status | Gap | Priority |
+|---|---------------|-----------------|-----|----------|
+| 17 | User authentication | Hardcoded 'default-user' | **MISSING** — Need Supabase Auth | P1 |
+| 18 | OAuth connection management | UserIntegration table unused | **MISSING** — Need connection UI + OAuth flows | P2 |
+| 19 | Multiple accounts per app | None | **MISSING** | P3 |
+| 20 | Dynamic field population from user data | Static config fields | **MISSING** | P3 |
 
-### Integrations
+### Execution & Reliability (P1-P2)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/integrations` | List available integrations |
-| `GET` | `/api/integrations/connected` | User's connected accounts |
-| `GET` | `/api/integrations/:adapter/auth` | Start OAuth flow |
-| `GET` | `/api/integrations/:adapter/callback` | OAuth callback |
-| `DELETE` | `/api/integrations/:adapter` | Disconnect integration |
+| # | Zapier Feature | GeekFlow Status | Gap | Priority |
+|---|---------------|-----------------|-----|----------|
+| 21 | Autoreplay (5 retries) | 3 retries implemented | Close enough for MVP | — |
+| 22 | Custom error handler step | None | **MISSING** | P3 |
+| 23 | Run cancellation stops execution | DB flag only, executor ignores | **BUG** — Need mid-run check | P2 |
+| 24 | Scheduler ↔ activate/pause | Not integrated | **BUG** — Need to wire scheduleFlow()/unscheduleFlow() | P1 |
+| 25 | Run cascade delete | Runs don't cascade from flow | **BUG** — Need onDelete: Cascade | P2 |
+| 26 | Webhook signing/secrets | No auth on inbound webhooks | **MISSING** — Need per-flow secret | P2 |
 
-### AI
+### Monitoring & History (P2)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/ai/suggest` | Describe process → get flow suggestion |
-| `POST` | `/api/ai/improve/:flowId` | AI reviews flow and suggests improvements |
-| `GET` | `/api/ai/templates` | Pre-built flow templates |
-
----
-
-## Visual Flow Builder — Design Spec
-
-### Canvas
-
-- SVG-based canvas with pan (mouse drag on empty space) and zoom (scroll wheel)
-- Grid snapping for clean alignment (16px grid)
-- Minimap in bottom-right corner for large flows
-
-### Nodes
-
-Each node is a rounded rectangle rendered on the canvas:
-
-```
-┌─────────────────────────┐
-│ ⚡ Form Submitted       │  ← Trigger node (green accent)
-│ Contact form on website │
-└──────────┬──────────────┘
-           │
-┌──────────▼──────────────┐
-│ 📋 Create CRM Record    │  ← Action node (blue accent)
-│ Name, email, phone      │
-└──────────┬──────────────┘
-           │
-     ┌─────┴─────┐
-     │  Is VIP?   │           ← Condition node (yellow accent, diamond)
-     └──┬─────┬──┘
-    Yes │     │ No
-        ▼     ▼
-   [Send VIP  [Send Standard
-    Welcome]   Welcome]
-```
-
-- **Trigger nodes** (green): Form submission, webhook, schedule, new email, Stripe payment
-- **Action nodes** (blue): Send email, Slack message, create record, update sheet, send SMS
-- **Condition nodes** (yellow): If/else branching based on data values
-- **Delay nodes** (orange): Wait X minutes/hours/days before continuing
-- **Transform nodes** (purple): Format data, extract fields, merge values
-
-### Step Palette (Left Sidebar)
-
-Categorized list of available triggers and actions, searchable:
-
-```
-TRIGGERS
-  📋 Form Submission
-  🔗 Webhook Received
-  ⏰ Schedule (cron)
-  💳 Stripe Payment
-  📧 New Email Received
-
-ACTIONS
-  📧 Send Email
-  💬 Slack Message
-  📋 Create CRM Record
-  📊 Add Google Sheet Row
-  📅 Create Calendar Event
-  📱 Send SMS
-  🔗 HTTP Request (advanced)
-
-LOGIC
-  🔀 If/Else Condition
-  ⏳ Delay / Wait
-  🔄 Transform Data
-  🛑 Stop Flow
-```
-
-### Step Config Panel (Right Sidebar)
-
-When a node is selected, the right panel shows its configuration form:
-
-- **Trigger config:** Which form, which webhook URL, cron schedule picker
-- **Action config:** Template fields with variable insertion (`{{trigger.email}}`, `{{step_2.output.id}}`)
-- **Condition config:** Field picker + operator (equals, contains, greater than) + value
-- **Data mapping:** Visual dropdown to map output from previous steps into current step's inputs
-
-### Variable Insertion UX
-
-When configuring a step, the user types `{{` to get a dropdown of available variables from previous steps:
-
-```
-{{trigger.name}}          ← from the trigger event
-{{trigger.email}}
-{{step_create_crm.id}}    ← output from "Create CRM Record" step
-{{step_create_crm.url}}
-```
-
-This is the key usability feature — no coding, just point-and-click data mapping.
+| # | Zapier Feature | GeekFlow Status | Gap | Priority |
+|---|---------------|-----------------|-----|----------|
+| 27 | Run detail view (per-step logs) | API exists, no UI | **MISSING** — Need RunDetail component | P2 |
+| 28 | Search/filter run history | Pagination only | **MISSING** — Need status filter at minimum | P2 |
+| 29 | Task usage meter | None | **MISSING** — Need counter + plan display | P2 |
+| 30 | Error notification emails | None | **MISSING** | P3 |
+| 31 | Version history for flows | None | **MISSING** | P3 |
 
 ---
 
-## Execution Engine — Design Spec
+## Implementation Roadmap
 
-### Flow Execution Lifecycle
+### Phase 2: Make It Communicate (UX Overhaul) — P0
 
-```
-1. TRIGGER fires (webhook, schedule, manual test)
-2. Engine creates a Run record (status: PENDING)
-3. Engine resolves trigger data into context object
-4. For each step in topological order:
-   a. Resolve inputMapping (replace {{variables}} with actual data)
-   b. Call the appropriate adapter
-   c. Log result to RunLog (input, output, duration)
-   d. Add output to context for downstream steps
-   e. If CONDITION: evaluate and choose branch
-   f. If DELAY: schedule continuation via BullMQ delayed job
-   g. If step fails: retry up to 3 times with exponential backoff
-5. Mark Run as COMPLETED or FAILED
-```
+**Goal:** A non-technical user can understand and use the product without explanation.
 
-### Context Object
+#### 2.1 App Directory & Plain-English Labels
 
-Each run maintains a context object that accumulates data as steps execute:
+Replace the developer-oriented step palette with an app-first experience.
 
-```typescript
-interface ExecutionContext {
-  trigger: Record<string, unknown>;    // Trigger event data
-  steps: Record<string, {              // Keyed by step ID
-    output: Record<string, unknown>;
-    status: 'completed' | 'failed' | 'skipped';
-    duration: number;
-  }>;
-  variables: Record<string, unknown>;  // User-defined variables
-}
-```
+**Backend:**
+- Create `AppDefinition` registry (in-memory or DB):
+  ```
+  { id: 'gmail', name: 'Gmail', icon: '/assets/icons/gmail.svg', category: 'email' }
+  { id: 'slack', name: 'Slack', icon: '/assets/icons/slack.svg', category: 'messaging' }
+  { id: 'webhook', name: 'Custom Webhook', icon: '🔗', category: 'advanced' }
+  { id: 'schedule', name: 'Schedule', icon: '📅', category: 'triggers' }
+  ```
+- Each app has triggers and actions with user-friendly names:
+  ```
+  Gmail > "New Email Received" (trigger)
+  Gmail > "Send Email" (action)
+  Slack > "New Message in Channel" (trigger)
+  Slack > "Send Message" (action)
+  Schedule > "Every Day at..." (trigger)
+  Schedule > "Every Week on..." (trigger)
+  Webhook > "When data arrives from another app" (trigger)
+  Webhook > "Send data to another app" (action)
+  ```
+- `GET /api/apps` endpoint returning available apps with their triggers/actions
 
-### Retry & Error Handling
+**Frontend:**
+- Replace `StepPaletteComponent` with `AppPickerComponent`:
+  - Grid of app tiles with icons (not a text list)
+  - Click app → see its triggers/actions with descriptions
+  - Search by app name or description
+- Replace all developer labels:
 
-- Each step retries up to 3 times with exponential backoff (1s, 4s, 16s)
-- If all retries fail, the step is marked FAILED
-- Flow can be configured to: stop on error (default), skip failed step, or use fallback value
-- Users receive email notification on flow failure (configurable)
+  | Current | New |
+  |---------|-----|
+  | Webhook Received | When data arrives from another app |
+  | Schedule (Cron) | Run on a schedule |
+  | HTTP Request | Send data to another app |
+  | Send Email | Send an email |
+  | Slack Message | Send a Slack message |
 
----
+#### 2.2 Structured Config Forms
 
-## AI Flow Generator — Design Spec
+Replace raw JSON editing with dynamic form fields.
 
-### "Describe Your Process" Feature
+- Define `ConfigField[]` per adapter action (model already exists in `integration.model.ts`):
+  ```typescript
+  interface ConfigField {
+    key: string;           // 'to', 'subject', 'body'
+    label: string;         // 'Recipient Email'
+    type: 'text' | 'email' | 'textarea' | 'select' | 'number' | 'toggle' | 'cron';
+    placeholder?: string;  // 'e.g., customer@example.com'
+    helpText?: string;     // 'The email address to send to'
+    required?: boolean;
+    options?: { label: string; value: string }[];  // For select fields
+    supportsVariables?: boolean;  // Show variable picker for this field
+  }
+  ```
+- Rewrite `StepConfigComponent` to render form fields dynamically
+- Add inline variable picker (dropdown, not raw `{{syntax}}`):
+  - Dropdown shows friendly names: "Trigger > Email Address", "Step 1 > Response Body"
+  - Inserts as visual pill/chip, not raw text
+  - Resolves to `{{trigger.body.email}}` under the hood
 
-The user types a natural language description of their manual workflow:
+#### 2.3 Vertical Wizard Editor (Replace Canvas for Default View)
 
-> "When someone fills out the contact form on my website, I copy their info into a Google Sheet, send them a welcome email with our service brochure, post in our #new-leads Slack channel, and set a reminder to call them in 2 days."
+Replace SVG canvas with a Zapier-style linear step editor for the default experience.
 
-Claude API analyzes this and returns a structured flow:
+- **Step list layout:** Vertical card stack, one step per card
+- **Each card shows:** App icon + event name + status indicator (configured/needs setup/error)
+- **Click to expand:** Inline config form appears inside the card
+- **"+" button** between cards to insert a new step
+- **Progressive disclosure:** Complete step 1 before step 2 opens
+- Keep SVG canvas accessible as "Advanced View" toggle for power users
 
-```json
-{
-  "name": "New Lead Processing",
-  "description": "Automates new contact form submissions",
-  "trigger": {
-    "type": "TRIGGER",
-    "adapter": "form",
-    "action": "form_submitted",
-    "config": { "formId": "contact-form" }
-  },
-  "steps": [
-    {
-      "type": "ACTION",
-      "adapter": "google-sheets",
-      "action": "add_row",
-      "config": {
-        "spreadsheetId": "{{select}}",
-        "values": {
-          "Name": "{{trigger.name}}",
-          "Email": "{{trigger.email}}",
-          "Phone": "{{trigger.phone}}"
-        }
-      }
-    },
-    {
-      "type": "ACTION",
-      "adapter": "email",
-      "action": "send_email",
-      "config": {
-        "to": "{{trigger.email}}",
-        "subject": "Welcome to [Your Business]!",
-        "body": "AI-generated welcome template with brochure link"
-      }
-    },
-    {
-      "type": "ACTION",
-      "adapter": "slack",
-      "action": "post_message",
-      "config": {
-        "channel": "#new-leads",
-        "text": "New lead: {{trigger.name}} ({{trigger.email}})"
-      }
-    },
-    {
-      "type": "DELAY",
-      "config": { "duration": 2, "unit": "days" }
-    },
-    {
-      "type": "ACTION",
-      "adapter": "google-calendar",
-      "action": "create_event",
-      "config": {
-        "title": "Follow up: {{trigger.name}}",
-        "duration": 30
-      }
-    }
-  ]
-}
-```
+#### 2.4 Template Gallery on Home Page
 
-The generated flow appears on the canvas for the user to review, customize, and activate.
+Redesign the dashboard from a bare flow list to a template-driven home page.
 
-### AI Prompt Strategy
+- **Top section:** "What would you like to automate?" prompt (text, leads to AI Copilot later)
+- **Category tabs:** "For you", "Lead management", "Customer support", "Marketing"
+- **Template cards:** 5-10 pre-built flow templates with:
+  - App icons
+  - Plain-English title: "Email me when my contact form is submitted"
+  - Description: "Sends you an email notification whenever someone fills out your website contact form"
+  - "Use this template" button → clones flow + steps, opens in editor
+- **"Start from scratch"** option below templates
+- **Your Flows** section below (current flow list, moved down)
 
-```
-System: You are FlowGeek's automation designer. Convert natural language
-process descriptions into structured workflow JSON. Use only the available
-adapters: [list]. Map data between steps using {{step.field}} syntax.
-Ask clarifying questions if the process is ambiguous.
+**Seed templates:**
 
-User: [their process description]
-Available integrations: [user's connected services]
-```
+| Template | Trigger | Actions |
+|----------|---------|---------|
+| Notify me of new form submissions | Webhook (form) | Send Email |
+| Post new leads to Slack | Webhook (form) | Slack Message |
+| Send follow-up email after inquiry | Webhook (form) | Delay 24h → Send Email |
+| Weekly email summary every Monday | Schedule (Mon 9am) | Send Email |
+| Forward webhook data to another app | Webhook | HTTP Request |
+| Notify team of new sale | Webhook (payment) | Slack + Email |
 
-### Pre-built Templates
+#### 2.5 Per-Step Testing
 
-Ship with 10-15 templates for common SMB workflows:
+Add inline test capability to each step in the wizard editor.
 
-1. **New Lead → CRM + Email + Slack** (the flagship example)
-2. **Stripe Payment → Invoice Email + Google Sheet Row**
-3. **New Customer → Welcome Email Series** (with delays)
-4. **Form Submission → Email Notification to Team**
-5. **Weekly Report → Compile Sheet Data + Email Summary**
-6. **Missed Call → SMS Follow-up + CRM Note**
-7. **New Review → Slack Alert + Thank You Email**
-8. **Appointment Booked → Confirmation Email + Calendar + Reminder SMS**
-9. **Invoice Overdue → Reminder Email Series** (1 day, 3 days, 7 days)
-10. **Social Media Mention → Slack Alert + CRM Activity Log**
+- **Trigger step:** "Pull sample data" or "Send a test webhook" button
+  - Shows sample output data (what fields are available for later steps)
+- **Action steps:** "Test this step" button
+  - Executes just that step with real data from the trigger test
+  - Shows success/failure and output data
+- Test results persist in the editor session for reference
 
 ---
 
-## Integration Adapters — Phase Plan
+### Phase 3: Core Missing Features — P1
 
-### Phase 1 (MVP) — 6 Adapters
+**Goal:** Feature parity with Zapier Free tier.
 
-| Adapter | Triggers | Actions |
-|---------|----------|---------|
-| **Webhook** | Receive HTTP POST | Send HTTP POST/GET |
-| **Email (SMTP)** | — | Send email (via SendGrid) |
-| **Slack** | — | Post message, post to channel |
-| **Google Sheets** | — | Add row, update row, read row |
-| **Schedule** | Cron (hourly/daily/weekly/monthly) | — |
-| **Form** | Form submission (embedded JS snippet) | — |
+#### 3.1 User Authentication (Supabase Auth)
 
-### Phase 2 — 6 More Adapters
+- Integrate Supabase Auth (email/password + magic link)
+- Replace hardcoded `'default-user'` with authenticated user ID from JWT
+- Add auth middleware to all `/api/*` endpoints
+- Login/signup flow in the Angular Elements app
 
-| Adapter | Triggers | Actions |
-|---------|----------|---------|
-| **Stripe** | Payment received, subscription created | Create invoice, refund |
-| **Google Calendar** | — | Create event, update event |
-| **Twilio SMS** | SMS received | Send SMS |
-| **Internal CRM** | Record created | Create record, update record |
-| **Mailchimp** | — | Add subscriber, tag contact |
-| **QuickBooks** | — | Create invoice, log expense |
+#### 3.2 Condition Steps (Filters)
 
-### Phase 3 — Expansion
+- **Visual rule builder** in the step config form:
+  - Field picker (dropdown of available variables from previous steps)
+  - Operator picker: equals, not equals, contains, does not contain, greater than, less than, exists, is empty
+  - Value input (text or variable reference)
+  - AND/OR grouping for multiple conditions
+- **Executor logic:** Evaluate conditions. If false, skip remaining steps (Zapier behavior).
+- **Adapter:** Built-in condition evaluator (not an external service)
 
-- Facebook Lead Ads (trigger)
-- Instagram DMs (trigger)
-- Shopify (orders, customers)
-- Square POS (payments)
-- Calendly (appointment booked)
-- Notion (create page, update database)
-- Airtable (add/update records)
-- Zapier Webhooks (interop with Zapier flows)
+#### 3.3 Delay Steps
 
----
+- **UI:** Duration picker (number + unit: minutes, hours, days)
+- **"Wait until" option:** Pick a datetime field from a previous step
+- **Executor:** For MVP, use `setTimeout` in-process. For production, queue a delayed job.
+- **Max delay:** 30 days (Zapier's limit)
 
-## Pricing Model
+#### 3.4 Scheduler ↔ Activate/Pause Integration (Bug Fix)
 
-| Plan | Price | Flows | Runs/Month | Features |
-|------|-------|-------|------------|----------|
-| **Free** | $0 | 3 | 100 | Basic triggers/actions, email support |
-| **Starter** | $19/mo | 10 | 1,000 | All integrations, conditions, delays |
-| **Pro** | $49/mo | Unlimited | 10,000 | AI suggestions, priority execution, templates, PDF reports |
+- `POST /flows/:id/activate` calls `scheduleFlow()` if flow has cron schedule
+- `POST /flows/:id/pause` calls `unscheduleFlow()`
+- Add to activate endpoint: validate all steps have required config
 
-Revenue model designed for Geek At Your Spot clients to start free, upgrade as they automate more.
+#### 3.5 AI Flow Generator (Copilot)
+
+- **UI:** Text prompt on home page: "What would you like to automate?"
+- **Backend:** `POST /api/ai/generate` — sends user description to Claude API
+- **Claude prompt:** System prompt with available apps/triggers/actions, user's connected services
+- **Output:** Structured flow JSON that creates a Flow + Steps in DRAFT status
+- **UX:** User sees generated flow in the editor, reviews, customizes, and activates
 
 ---
 
-## Implementation Phases
+### Phase 4: Reliability & Polish — P2
 
-### Phase 1: Foundation (Weeks 1-3)
+**Goal:** Production-ready for paying customers.
 
-**Goal:** Backend scaffold + visual builder MVP + 3 adapters working end-to-end.
+#### 4.1 App Connections (OAuth/API Keys)
 
-1. **Workspace setup**
-   - Create `FlowGeek-Workspace/` with Angular multi-project structure
-   - Initialize `flowgeek-backend` with Express + TypeScript + Prisma + ESLint
-   - Configure Supabase database, Prisma schema, initial migration
-   - Register with ControllerBackend on port 3200
+- Connection management UI (My Connections page)
+- Per-adapter setup: API key entry form or OAuth redirect
+- Store encrypted credentials in `user_integrations` table
+- Connection health indicators (connected/expired/error)
+- Adapter actions pull credentials from UserIntegration, not hardcoded env vars
 
-2. **Backend core**
-   - Flow CRUD API (create, read, update, delete flows)
-   - Step management (add/remove/reorder steps within a flow)
-   - Execution engine (sequential step runner with context passing)
-   - Webhook receiver (inbound trigger endpoint)
-   - Schedule trigger (basic cron via node-cron)
-   - Run logging (per-step input/output/duration/status)
+#### 4.2 Transform Steps (Formatter)
 
-3. **Integration adapters (first 3)**
-   - Webhook adapter (send/receive HTTP)
-   - Email adapter (SendGrid SMTP)
-   - Slack adapter (post message via Web API)
+- Text operations: uppercase, lowercase, trim, find/replace, extract email/phone/URL
+- Number operations: basic math, format currency
+- Date operations: format, add/subtract time, convert timezone
+- Lookup table: key→value mapping
+- Visual form for each operation type (not JSON)
 
-4. **Frontend — Visual builder MVP**
-   - SVG canvas with pan/zoom
-   - Node rendering (trigger, action types)
-   - Connection lines between nodes
-   - Step palette (left sidebar) with drag-to-add
-   - Step config panel (right sidebar) with form fields
-   - Variable insertion (`{{trigger.field}}` picker)
-   - Save/load flow from backend
+#### 4.3 Paths (Branching Logic)
 
-5. **Frontend — Dashboard**
-   - Flow list with status badges (draft/active/paused)
-   - Create new flow button
-   - Basic run history per flow
+- If/else branching with up to 5 branches
+- Each branch has its own condition set and action steps
+- Fallback branch for when no condition matches
+- Executor follows matching branch(es)
 
-### Phase 2: Intelligence + Polish (Weeks 4-5)
+#### 4.4 Run Detail UI
 
-**Goal:** AI flow generation, conditions/delays, 3 more adapters, testing.
+- New `RunDetailComponent` showing per-step execution:
+  - App icon + step name + status (green check / red X)
+  - Expandable: input data → output data → duration
+  - Error message for failed steps
+- Link from run history table → detail view
 
-6. **AI flow generator**
-   - "Describe your process" input panel
-   - Claude API integration for natural language → flow JSON
-   - Generated flow renders on canvas for review/edit
-   - 5 pre-built templates
+#### 4.5 Bug Fixes
 
-7. **Advanced step types**
-   - Condition nodes (if/else branching)
-   - Delay nodes (wait X time, then continue)
-   - Transform nodes (format/extract data)
+- Add `onDelete: Cascade` to Run→Flow relation (orphan runs)
+- Add cancellation check between steps in executor
+- Flow name editing in builder
 
-8. **More adapters**
-   - Google Sheets (OAuth + add row)
-   - Schedule trigger (cron picker UI)
-   - Form trigger (embeddable JS snippet)
+#### 4.6 Plan Enforcement
 
-9. **Execution improvements**
-   - BullMQ job queue for async execution
-   - Retry with exponential backoff
-   - Delay step via BullMQ delayed jobs
-   - Error notification emails
+- Check flowLimit before creating new flows
+- Track task usage (successful action executions per month)
+- Usage meter in dashboard header
+- Upgrade prompt when approaching limits
 
-10. **UX polish**
-    - Canvas minimap
-    - Grid snapping
-    - Undo/redo (command pattern)
-    - Mobile-responsive dashboard (builder is desktop-only)
-    - Flow activation validation (checks all steps configured)
+#### 4.7 Webhook Security
 
-### Phase 3: Production Launch (Week 6)
-
-11. **Deployment**
-    - Deploy backend to Render.com
-    - Build Angular Elements bundle
-    - FTP upload to WordPress
-    - Create WordPress page template (`page-flowgeek.php`)
-    - Update `functions.php` with `wp_enqueue_script_module()`
-
-12. **Testing + hardening**
-    - End-to-end flow: form submit → email + Slack + Sheet
-    - Error handling for adapter failures
-    - Rate limiting on webhook endpoints
-    - Input validation on all API endpoints
-
-13. **Documentation**
-    - In-app onboarding tour (first flow wizard)
-    - Template gallery with "Use this template" one-click setup
-    - Help tooltips on builder UI
-
-### Phase 4: Growth Features (Post-Launch)
-
-14. **Phase 2 adapters** (Stripe, Calendar, SMS, CRM, Mailchimp, QuickBooks)
-15. **AI improvements** (suggest automations from run history, optimize slow flows)
-16. **Multi-user** (team workspaces, shared flows, role-based access)
-17. **Analytics dashboard** (runs over time, failure rate, time saved estimates)
-18. **Flow versioning** (edit without breaking active version, rollback)
-19. **Marketplace** (share/sell flow templates)
+- Per-flow webhook secret (auto-generated on creation)
+- HMAC signature verification on inbound webhooks
+- Show webhook URL + secret in flow config
 
 ---
 
-## Key Technical Decisions
+### Phase 5: Growth — P3
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Canvas technology | SVG (not HTML5 Canvas) | DOM-based = accessible, styleable, debuggable. Adequate perf for <100 nodes. |
-| Job queue | BullMQ + Redis | Proven for delayed jobs (delay steps), retries, and concurrency control. |
-| Adapter pattern | Strategy pattern with base class | Each integration implements `execute(config, context)` — easy to add new ones. |
-| Data passing | Template variables `{{step.field}}` | Familiar Handlebars-like syntax, non-technical users understand it. |
-| Auth | Supabase Auth (JWT) | Already using Supabase, built-in auth with social logins. |
-| Secrets storage | Encrypted JSON in `UserIntegration.credentials` | OAuth tokens encrypted at rest via Supabase column encryption. |
-| AI model | Claude Sonnet 4+ | Best cost/quality ratio for structured output generation. |
-| PDF reports | Reuse RankPilot's Puppeteer approach | Proven pattern, consistent across Geek products. |
-
----
-
-## Competitive Differentiation
-
-| Feature | Zapier | Make.com | FlowGeek |
-|---------|--------|----------|----------|
-| Target user | Tech-savvy | Power users | Non-technical SMB owners |
-| Pricing | $20-$100+/mo | $9-$16+/mo | Free-$49/mo |
-| AI suggestions | No | No | Yes — describe process, get flow |
-| Pre-built for SMB | Generic | Generic | Templates for local businesses |
-| Setup complexity | Medium | High | Low — guided wizard |
-| White-label for MSPs | No | No | Planned (Geek clients) |
-| Integration count | 7,000+ | 2,000+ | 6-20 (curated for SMB) |
-
-The moat is **simplicity + AI + local SMB focus**, not integration count.
+| Feature | Description |
+|---------|-------------|
+| More adapters | Google Sheets, Stripe, Twilio SMS, WordPress hooks, Calendly, QuickBooks |
+| Error notification emails | Alert flow owner on failure |
+| Version history | Track changes, rollback to previous version |
+| Custom error handler step | Alternative workflow branch on step failure |
+| Team/multi-user | Shared flows, role-based access |
+| Undo/redo in editor | Action history stack |
+| Sub-flows | Reusable step sequences callable from multiple flows |
+| Dynamic field population | Dropdowns populated from user's actual account data |
 
 ---
 
-## Risk Mitigation
+## Priority Summary
 
-| Risk | Mitigation |
-|------|-----------|
-| OAuth complexity (Google, Slack) | Start with API key auth for Slack, webhook-based triggers. Add OAuth in Phase 2. |
-| Canvas performance with many nodes | SVG is fine for <100 nodes. Most SMB flows have 3-8 steps. |
-| BullMQ/Redis cost on Render | Use Render's free Redis tier (25MB). Sufficient for ~1,000 runs/day. |
-| AI generating invalid flows | Validate AI output against adapter schemas before rendering. Show user what needs fixing. |
-| Adapter failures (API downtime) | Retry with backoff. Dead letter queue for manual review. Email owner on persistent failure. |
-| Scope creep | Strict Phase 1 = 3 adapters + builder + run. Ship fast, iterate based on real usage. |
+| Priority | What | Why |
+|----------|------|-----|
+| **P0** | App directory, structured forms, wizard editor, templates, friendly labels | Product is **unusable** without these |
+| **P1** | Auth, conditions, delays, scheduler fix, AI copilot, per-step testing | Core functionality for real usage |
+| **P2** | App connections, transforms, paths, run detail UI, bug fixes, plan enforcement, webhook security | Required for launch |
+| **P3** | More adapters, error emails, versioning, teams, undo/redo, sub-flows | Growth features |
 
 ---
 
-## ControllerBackend Registration
+## Architecture Notes
 
-Add to `ControllerBackend` proxy routes:
+### Wizard vs. Canvas Decision
 
-```typescript
-// In ControllerBackend route config
-'/api/flowgeek' -> FlowGeekBackend (Port 3200)
-```
+Zapier uses a vertical wizard for its core 95% of users and offers a "Visual Editor"
+(canvas view) as an optional advanced feature. GeekFlow should follow the same pattern:
 
-Updated architecture:
-```
-ControllerBackend (Port 4000)
-  /api/web-dev       -> WebDevelopmentBackend (Port 3000)
-  /api/ai-analytics  -> AIBusinessAnalyticsBackend (Port 5001)
-  /api/marketing     -> MarketingBackend (Port 5002)
-  /api/website-analytics -> WebsiteAnalyticsBackend (Port 5003)
-  /api/flowgeek      -> FlowGeekBackend (Port 3200)      ← NEW
-```
+- **Default:** Vertical wizard (Phase 2.3)
+- **Advanced toggle:** SVG canvas (already built, just needs toggle access)
 
----
+### Template Storage
 
-## Success Metrics
+Flow templates should be stored as regular Flow records with a `isTemplate: true` flag
+(add to Prisma schema) and `category` field. Cloning a template creates a new Flow in
+DRAFT status with all steps copied.
 
-| Metric | Target (3 months post-launch) |
-|--------|-------------------------------|
-| Active flows | 50+ across 15+ users |
-| Successful runs/month | 5,000+ |
-| Flow failure rate | < 5% |
-| AI suggestion acceptance | > 40% of generated flows activated |
-| Free → Starter conversion | > 15% |
-| Time to first active flow | < 10 minutes |
+### AI Integration Architecture
+
+The Claude API call for flow generation should:
+1. Receive user's plain-English description
+2. Include system prompt with available apps, triggers, actions, and their ConfigField schemas
+3. Return structured JSON matching the Flow + Steps schema
+4. Backend validates and creates Flow in DRAFT status
+5. Frontend opens the wizard editor with the generated flow pre-populated
 
 ---
 
-*Plan created: February 16, 2026*
+## Zapier UI Reference Screenshots
+
+Visual references from Zapier's production UI captured February 17, 2026.
+
+### 1. Home Page (zapier.com/app/home)
+
+AI Copilot prompt bar front and center: "Enter an idea or app name to get started."
+Below it: category filter chips (Lead management, Sales pipeline, Marketing campaigns,
+Customer support, Project management). Two "Start from scratch" tiles: one for
+single-step Zaps, one for multi-step. Below that: "Recommended for you" template
+cards showing real app icons (Gmail, Slack, HubSpot, Google Sheets) with
+plain-English descriptions like "Create Trello cards from new Typeform entries."
+
+**Key takeaway:** The home page is a launchpad, not a list. Users are guided toward
+templates and AI generation before they ever see "create from scratch."
+
+### 2. Zap Editor (zapier.com/editor)
+
+Vertical wizard layout. Left sidebar has Copilot with "Describe your workflow" text
+input (supports text and voice). Main area shows a linear card stack:
+- **Trigger card** (top) — app icon + "1. Trigger" label, expandable
+- **Action card** — app icon + "2. Action" label, expandable
+- **"+" buttons** between every card to insert new steps
+- Each card has a configure/test/publish progression
+
+No canvas. No nodes. No connection lines. Pure vertical progression.
+
+**Key takeaway:** The editor is a form wizard, not a diagramming tool. One step
+visible at a time. Progressive disclosure eliminates overwhelm.
+
+### 3. Templates Page (zapier.com/templates)
+
+Header: "Workflow Automation Templates." Left sidebar with use-case categories:
+Lead management, Sales pipeline, Marketing campaigns, Customer support, etc.
+Main area: grid of template cards, each showing:
+- Two app icons connected by an arrow
+- Plain-English title (e.g., "Add new Facebook Lead Ads leads to HubSpot")
+- "Use this Zap" CTA button
+
+**Key takeaway:** Templates are organized by business outcome, not by app or
+technology. Users find automations by what they want to accomplish.
+
+### 4. Assets / Zaps Page (zapier.com/app/assets/zaps)
+
+Left sidebar navigation: Folders, Zaps, Tables, Forms, Chatbots, Canvases, Agents.
+Main area shows "My Zaps" list with status toggles (on/off), last edit date,
+folder assignment. Below the list: "Templates for you" section with recommended
+automations based on connected apps.
+
+**Key takeaway:** Zapier has expanded well beyond simple Zaps — Tables, Forms,
+Chatbots, Canvases, and Agents are all first-class products in the nav. GeekFlow
+should note this trajectory but stay focused on core workflow automation for now.
+
+### 5. App Connections (zapier.com/app/assets/connections)
+
+Clean empty state with "Add connection" CTA button and descriptive text explaining
+what connections are. Each connected app shows: app icon, account name, connection
+status (Connected/Expired), and last used date.
+
+**Key takeaway:** Connections are a standalone management page, not buried in flow
+config. Users set up connections once and reuse them across all flows.
+
+### 6. Zap History (zapier.com/app/history)
+
+Filter bar across the top: Date range picker, Zaps dropdown, Apps dropdown, Folders
+dropdown, Status filter (Success/Error/Filtered/Held/Waiting/Played). "Autoreplay"
+toggle to automatically retry failed tasks. Table below shows: Zap name, app icons,
+status badge, timestamp, data preview.
+
+**Key takeaway:** Monitoring is filterable and actionable. Autoreplay is a
+one-toggle feature that eliminates manual retry. Status categories are
+user-friendly (not HTTP codes).
+
+### 7. Explore Apps (zapier.com/apps)
+
+"9,199 apps" headline. Category tabs: Integrations (8,500+), AI (477), Custom
+(Unlimited), Zapier AI, Zapier Tools. Each app tile shows icon + name + brief
+description. Search bar at top for finding specific apps.
+
+**Key takeaway:** The app directory IS the product catalog. 9,199 integrations
+is the moat. GeekFlow will never compete on quantity — must compete on curation
+and SMB relevance.
+
+### 8. Functions Beta (zapier.com/functions)
+
+Code-first automation for developers. Write JavaScript/TypeScript functions that
+run on Zapier's infrastructure. Escape hatch for when no-code isn't enough.
+
+**Key takeaway:** Even the no-code leader provides a code escape hatch. GeekFlow's
+"Advanced View" (SVG canvas) serves a similar purpose — power users need an
+off-ramp from the wizard.
+
+### 9. Lead Router (leadrouter.zapier.com/records/fields)
+
+CRM-like field definitions table: First Name, Last Name, Email columns with
+entity type "Sales Rep." Routing rules and queue management. This is a standalone
+Zapier product, not a Zap feature.
+
+**Key takeaway:** Zapier is building vertical SaaS products on top of their
+automation platform. Not relevant for GeekFlow Phase 2-3, but shows where the
+market is heading.
+
+### 10. GeekFlow Current State (geekatyourspot.com/geek-flow/)
+
+"My Workflows" header with "+ New Flow" button. Flow list showing test entries
+("test" and "Another") with Edit/Activate/Pause/Delete/Duplicate buttons. Activate
+returns 400 errors. No icons, no templates, no categories, no AI prompt. Raw
+developer-facing UI with no guidance for non-technical users.
+
+**Key takeaway:** This is the starting point. Everything above represents the
+gap between where GeekFlow is and where it needs to be.
+
+---
+
+*Created: February 17, 2026*
+*Based on: Zapier feature audit + full GeekFlow codebase audit*
+*Updated from original plan (February 16, 2026)*

@@ -58,6 +58,7 @@ export class FlowDashboardComponent {
       const flow = await this.api.createFlow('default-user', name);
       this.newFlowName.set('');
       this.showCreateForm.set(false);
+      await this.loadFlows();
       this.flowOpened.emit(flow.id);
     } catch {
       this.error.set('Failed to create flow');
